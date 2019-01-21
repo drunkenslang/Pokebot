@@ -5,6 +5,7 @@ CONSOLE_LOGS = ENABLED
 ; Listening Port that the Bot listens on.
 ; You will need to add http://bot_host_ip:3333/ in RDM.
 LISTENING_PORT = 3333
+HOST_IP = 213.19.23.123
 
 ; COMMAND PREFIX
 PREFIX = '.'
@@ -54,8 +55,11 @@ Custom = true
 ; The reward names must match the reward names found in /static/en.json
 ; You can comment our rewards without removing them using a ';'
 [QUEST]
+
 Subscriptions = ENABLED
 Discord_Feeds = ENABLED
+Reset_Time = '23:55:00'
+Default_Delivery = 08:00
 Rewards[] = Ultra Ball
 Rewards[] = Hyper Potion
 Rewards[] = Max Potion

@@ -1,6 +1,3 @@
-const Discord=require('discord.js');
-const moment=require('moment');
-
 //#############################################################//
 //#############################################################//
 //#####   _____   ____  _  ________ __  __  ____  _   _   #####//
@@ -13,6 +10,8 @@ const moment=require('moment');
 //#############################################################//
 //#############################################################//
 
+const Discord = require('discord.js');
+
 module.exports.run = async (MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server) => {
 
   // FETCH ALL USERS FROM THE USERS TABLE AND CHECK SUBSCRIPTIONS
@@ -21,142 +20,140 @@ module.exports.run = async (MAIN, internal_value, sighting, time_now, main_area,
       users.forEach((user,index) => {
 
         // FETCH THE GUILD MEMBER AND CHECK IF A ADMINISTRATOR/DONOR
-        // let member = MAIN.guilds.get(user.discord_id).members.get(user.user_id);
-        // if(!member){ proceed = false; }
-        // else if(member.hasPermission('ADMINISTRATOR')){ proceed = true; }
-        // else if(server.donor_role && !member.roles.has(server.donor_role)){ proceed = false; }
+        let member = MAIN.guilds.get(user.discord_id).members.get(user.user_id), proceed = true;
+        switch(true){
+          case !member: proceed = false; break;
+          case member.hasPermission('ADMINISTRATOR'): proceed = true; break;
+          default: if(server.donor_role && !member.roles.has(server.donor_role)){ proceed = false; }
+        }
 
         // DEFINE VARIABLES
         let user_areas = user.geofence.split(',');
 
         // CHECK IF THE USERS SUBS ARE PAUSED, EXIST, AND THAT THE AREA MATCHES THEIR DISCORD
-        if(user.pokemon){
+        if(user.pokemon && proceed == true){
 
-          // CHECK IF THE AREA IS WITHIN THE USER'S GEOFENCES
-          if(user.geofence == server.name || user_areas.indexOf(main_area) >= 0 || user_areas.indexOf(sub_area) >= 0){
+          // CONVERT POKEMON LIST TO AN ARRAY
+          let pokemon = JSON.parse(user.pokemon);
 
-            // SEND TO USER CHECK FUNCTION
-            sub_check(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user);
-          }
-          else{
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Area Filters.'); }
-          }
-        }
-      });
-    }
-  });
-}
+          // CHECK EACH USER SUBSCRIPTION
+          pokemon.subscriptions.forEach((sub,index) => {
 
-async function sub_check(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user){
-  // CONVERT REWARD LIST TO AN ARRAY
-  let pokemon = JSON.parse(user.pokemon);
+            if(sub.name == MAIN.pokemon[sighting.pokemon_id].name || sub.name.toLowerCase().startsWith('all')){
 
-  // DETERMINE GENDER
-  if(sighting.gender == 1){ gender = 'male'; }
-  else if(sighting.gender == 2){ gender = 'female'; }
-  else{ gender = 'all'; }
+              // CHECK IF THE AREA IS WITHIN THE USER'S GEOFENCES
+              if(sub.areas == 'No' || user.geofence == server.name || user_areas.indexOf(main_area) >= 0 || user_areas.indexOf(sub_area) >= 0){
 
-  // CHECK EACH USER SUBSCRIPTION
-  pokemon.subscriptions.forEach((sub,index) => {
+                // DETERMINE GENDER
+                if(sighting.gender == 1){ gender = 'male'; }
+                else if(sighting.gender == 2){ gender = 'female'; }
+                else{ gender = 'all'; }
 
-    if(sub.name == MAIN.pokemon[sighting.pokemon_id].name || sub.name.startsWith('ALL')){
-      if(sub.min_iv.length > 3){
+                if(sub.min_iv.length > 3){
 
-        // SPLIT THE IVs UP INTO INDIVIDUAL STATS
-        let min_iv = sub.min_iv.split('/');
-        let max_iv = sub.max_iv.split('/');
+                  // SPLIT THE IVs UP INTO INDIVIDUAL STATS
+                  let min_iv = sub.min_iv.split('/');
+                  let max_iv = sub.max_iv.split('/');
 
-        // CHECK ALL SUBSCRIPTION REQUIREMENTS
-        switch(true){
-          case sighting.individual_attack < min_iv[0]:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Atk IV Filter.'); }
-            break;
+                  // CHECK ALL SUBSCRIPTION REQUIREMENTS
+                  switch(true){
+                    case sighting.individual_attack < min_iv[0]:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Atk IV Filter.'); }
+                      break;
 
-          case sighting.individual_defense < min_iv[1]:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Def IV Filter.'); }
-            break;
+                    case sighting.individual_defense < min_iv[1]:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Def IV Filter.'); }
+                      break;
 
-          case sighting.individual_stamina < min_iv[2]:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Sta IV Filter.'); }
-            break;
+                    case sighting.individual_stamina < min_iv[2]:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Sta IV Filter.'); }
+                      break;
 
-          case sighting.individual_attack > max_iv[0]:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Atk IV Filter.'); }
-            break;
+                    case sighting.individual_attack > max_iv[0]:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Atk IV Filter.'); }
+                      break;
 
-          case sighting.individual_defense > max_iv[1]:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Def IV Filter.'); }
-            break;
+                    case sighting.individual_defense > max_iv[1]:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Def IV Filter.'); }
+                      break;
 
-          case sighting.individual_stamina > max_iv[2]:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Sta IV Filter.'); }
-            break;
+                    case sighting.individual_stamina > max_iv[2]:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Sta IV Filter.'); }
+                      break;
 
-          case sub.min_cp > sighting.cp:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min CP Filter.'); }
-            break;
+                    case sub.min_cp > sighting.cp:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min CP Filter.'); }
+                      break;
 
-          case sub.max_cp < sighting.cp:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max CP Filter.'); }
-            break;
+                    case sub.max_cp < sighting.cp:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max CP Filter.'); }
+                      break;
 
-          case sub.min_lvl > sighting.pokemon_level:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Level Filter.'); }
-            break;
+                    case sub.min_lvl > sighting.pokemon_level:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Level Filter.'); }
+                      break;
 
-          case sub.max_lvl < sighting.pokemon_level:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Level Filter.'); }
-            break;
-          default:
+                    case sub.max_lvl < sighting.pokemon_level:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Level Filter.'); }
+                      break;
+                    default:
 
-          // CHECK GENDER AND NAME FOR A MATCH
-          if(sub.gender != 'ALL' && sub.gender.toLowerCase() != gender){
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Gender Filter.'); }
-            break;
-          }
-          else{ prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user); }
-        }
-      }
-      else{
-        switch(true){
-          case sub.min_iv > internal_value:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min % IV Filter.'); }
-            break;
+                    // CHECK GENDER AND NAME FOR A MATCH
+                    if(sub.gender.toLowerCase() != 'all' && sub.gender.toLowerCase() != gender){
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Gender Filter.'); }
+                      break;
+                    }
+                    else{ prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user); }
+                  }
+                }
+                else{
+                  switch(true){
+                    case sub.min_iv > internal_value:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min % IV Filter.'); }
+                      break;
 
-          case sub.max_iv < internal_value:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max % IV Filter.'); }
-            break;
+                    case sub.max_iv < internal_value:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max % IV Filter.'); }
+                      break;
 
-          case sub.min_cp > sighting.cp:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min CP Filter.'); }
-            break;
+                    case sub.min_cp > sighting.cp:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min CP Filter.'); }
+                      break;
 
-          case sub.max_cp < sighting.cp:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max CP Filter.'); }
-            break;
+                    case sub.max_cp < sighting.cp:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max CP Filter.'); }
+                      break;
 
-          case sub.min_lvl > sighting.pokemon_level:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Level Filter.'); }
-            break;
+                    case sub.min_lvl > sighting.pokemon_level:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Min Level Filter.'); }
+                      break;
 
-          case sub.max_lvl < sighting.pokemon_level:
-            if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Level Filter.'); }
-            break;
-          default:
+                    case sub.max_lvl < sighting.pokemon_level:
+                      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Max Level Filter.'); }
+                      break;
+                    default:
 
-            // CHECK GENDER AND NAME FOR A MATCH
-            if(sub.gender != 'ALL' && sub.gender.toLowerCase() != gender){
-              if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Gender Filter.'); }
-              break;
+                      // CHECK GENDER AND NAME FOR A MATCH
+                      if(sub.gender.toLowerCase() != 'all' && sub.gender.toLowerCase() != gender){
+                        if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Gender Filter.'); }
+                        break;
+                      }
+                      else{
+                        prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user);
+                      }
+                  }
+                }
+              }
+              else{
+                if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Area Filters.'); }
+              }
             }
             else{
-              prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user);
+              if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Name Filter.'); }
             }
+          });
         }
-      }
-    }
-    else{
-      if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Name Filter.'); }
+      }); return;
     }
   });
 }
@@ -222,6 +219,6 @@ async function prepare_alert(MAIN, internal_value, sighting, time_now, main_area
 
     if(MAIN.logging == 'ENABLED'){ console.info('[Pokébot] ['+MAIN.Bot_Time(null,'stamp')+'] [Subscriptions] Sent a '+name+' DM to '+user.user_name+'.'); }
 
-    MAIN.Send_DM(server.id, user.user_id, pokemon_embed, user.bot);
+    return MAIN.Send_DM(server.id, user.user_id, pokemon_embed, user.bot);
   });
 }
