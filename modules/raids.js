@@ -132,8 +132,8 @@ function send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, s
 
         // CREATE THE EGG EMBED
         raid_embed = new Discord.RichEmbed().setThumbnail(embed_thumb).setColor(embed_color)
-          .addField(raid.gym_name, embed_area, false)
-          .addField('Hatches: '+hatch_time+' (*'+hatch_mins+' Mins*)', 'Level '+raid.level+' | '+defending_team+raid_sponsor, false)
+          .addField('**L'+raid.level+'** egg at **'+raid.gym_name+'**', 'Hatches: **'+hatch_time+'** (*'+hatch_mins+' Mins*)', false)
+          .addField(embed_area, 'Level '+raid.level+' | '+defending_team+raid_sponsor, false)
           .addField('Directions:','[Google Maps](https://www.google.com/maps?q='+raid.latitude+','+raid.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+raid.latitude+','+raid.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+raid.latitude+','+raid.longitude+'&navigate=yes)',false)
           .setImage(img_url);
           //.attachFile(attachment).setImage('attachment://Raid_Alert.png');
@@ -172,10 +172,10 @@ function send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, s
 
         // CREATE THE RAID EMBED
         raid_embed = new Discord.RichEmbed().setThumbnail(raid_url).setColor(embed_color)
-          .setTitle('**'+pokemon_name+'** has taken over a Gym!')
-          .setDescription(move_name_1+' '+move_type_1+' / '+move_name_2+' '+move_type_2)
+          .setTitle('**'+pokemon_name+'** has taken over **'+gym_name+'**!')
+          .setDescription('Raid Ends: **'+end_time+'** (*'+end_mins+' Mins*)')
           .addField(gym_name+' | '+embed_area, pokemon_type, false)
-          .addField('Raid Ends: '+end_time+' (*'+end_mins+' Mins*)', 'Level '+raid.level+' | '+defending_team+raid_sponsor, false)
+          .addField(move_name_1+' '+move_type_1+' / '+move_name_2+' '+move_type_2, 'Level '+raid.level+' | '+defending_team+raid_sponsor, false)
           .addField('Directions:','[Google Maps](https://www.google.com/maps?q='+raid.latitude+','+raid.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+raid.latitude+','+raid.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+raid.latitude+','+raid.longitude+'&navigate=yes)',false)
           .setImage(img_url);
           //.attachFile(attachment).setImage('attachment://Raid_Alert.png');
