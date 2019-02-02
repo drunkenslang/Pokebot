@@ -12,7 +12,7 @@
 
 const Discord = require('discord.js');
 
-module.exports.run = async (MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server) => {
+module.exports.run = async (MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, timezone) => {
 
   // FETCH ALL USERS FROM THE USERS TABLE AND CHECK SUBSCRIPTIONS
   MAIN.database.query("SELECT * FROM pokebot.users WHERE discord_id = ? AND status = ?", [server.id, 'ACTIVE'], function (error, users, fields){
@@ -103,7 +103,7 @@ module.exports.run = async (MAIN, internal_value, sighting, time_now, main_area,
                       if(MAIN.debug.Subscriptions == 'ENABLED'){ console.info('[DEBUG-Subscriptions] [pokemon.js] '+MAIN.pokemon[sighting.pokemon_id].name+' Did Not Pass '+user.user_name+'\'s Gender Filter.'); }
                       break;
                     }
-                    else{ prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user); }
+                    else{ prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user, timezone); }
                   }
                 }
                 else{
@@ -139,7 +139,7 @@ module.exports.run = async (MAIN, internal_value, sighting, time_now, main_area,
                         break;
                       }
                       else{
-                        prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user);
+                        prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user, timezone);
                       }
                   }
                 }
@@ -158,17 +158,14 @@ module.exports.run = async (MAIN, internal_value, sighting, time_now, main_area,
   });
 }
 
-async function prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user){
+async function prepare_alert(MAIN, internal_value, sighting, time_now, main_area, sub_area, embed_area, server, user, timezone){
 
   // FETCH THE MAP TILE
-  MAIN.Static_Map_Tile(sighting.latitude,sighting.longitude,'pokemon').then(async function(img_url){
+  MAIN.Static_Map_Tile(sighting.latitude, sighting.longitude, 'pokemon').then(async function(img_url){
 
     // DEFINE VARIABLES
-    let hide_time = await MAIN.Bot_Time(sighting.disappear_time,'1');
+    let hide_time = await MAIN.Bot_Time(sighting.disappear_time, '1', timezone);
     let hide_minutes = Math.floor((sighting.disappear_time-(time_now/1000))/60);
-
-    // ATTACH THE MAP TILE
-    let attachment = new Discord.Attachment(img_url, 'Pokemon_Alert.png');
 
     // DETERMINE MOVE NAMES AND TYPES
     let move_name_1 = MAIN.moves[sighting.move_1].name;
@@ -210,12 +207,11 @@ async function prepare_alert(MAIN, internal_value, sighting, time_now, main_area
     let pokemon_embed = new Discord.RichEmbed()
       .setColor('00ccff')
       .setThumbnail(pokemon_url)
-      .attachFile(attachment)
-      .setImage('attachment://Pokemon_Alert.png')
       .setTitle(name+' '+sighting.individual_attack+'/'+sighting.individual_defense+'/'+sighting.individual_stamina+' ('+internal_value+'%)'+weather_boost)
       .addField('Level '+sighting.pokemon_level+' | CP '+sighting.cp+gender, move_name_1+' '+move_type_1+' / '+move_name_2+' '+move_type_2, false)
       .addField('Disappears: '+hide_time+' (*'+hide_minutes+' Mins*)', height+' | '+weight+'\n'+pokemon_type, false)
-      .addField(embed_area+' | Directions:','[Google Maps](https://www.google.com/maps?q='+sighting.latitude+','+sighting.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+sighting.latitude+','+sighting.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+sighting.latitude+','+sighting.longitude+'&navigate=yes)');
+      .addField(embed_area+' | Directions:','[Google Maps](https://www.google.com/maps?q='+sighting.latitude+','+sighting.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+sighting.latitude+','+sighting.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+sighting.latitude+','+sighting.longitude+'&navigate=yes)')
+      .setImage(img_url);
 
     if(MAIN.logging == 'ENABLED'){ console.info('[Pokébot] ['+MAIN.Bot_Time(null,'stamp')+'] [Subscriptions] Sent a '+name+' DM to '+user.user_name+'.'); }
 

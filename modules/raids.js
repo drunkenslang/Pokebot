@@ -15,11 +15,11 @@ const Subscription = require('./subscriptions/raids.js');
 const insideGeofence = require('point-in-polygon');
 const insideGeojson = require('point-in-geopolygon');
 
-module.exports.run = async (MAIN, raid, main_area, sub_area, embed_area, server) => {
+module.exports.run = async (MAIN, raid, main_area, sub_area, embed_area, server, timezone) => {
 
   // CHECK SUBSCRIPTION CONFIG
   if(MAIN.config.RAID.Subscriptions == 'ENABLED'){
-    Subscription.run(MAIN, raid, main_area, sub_area, embed_area, server);
+    Subscription.run(MAIN, raid, main_area, sub_area, embed_area, server, timezone);
   } //else{ console.info('[Pokébot] Raid ignored due to Disabled Subscription setting.'); }
 
   if(MAIN.debug.Raids == 'ENABLED'){ console.info('[DEBUG] [Modules] [raids.js] Received a Raid.'); }
@@ -52,11 +52,11 @@ module.exports.run = async (MAIN, raid, main_area, sub_area, embed_area, server)
           // CHECK FOR EX ELIGIBLE REQUIREMENT
           if(filter.Ex_Eligible_Only == undefined || filter.Ex_Eligible_Only != true){
             if(MAIN.debug.Raids == 'ENABLED'){ console.info('[DEBUG] [Modules] [raids.js] Raid Passed Filters for '+raid_channel[0]+'.'); }
-            send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, server);
+            send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, server, timezone);
           }
           else if(filter.Ex_Eligible_Only == raid.sponsor_id){
             if(MAIN.debug.Raids == 'ENABLED'){ console.info('[DEBUG] [Modules] [raids.js] Raid Passed Filters for '+raid_channel[0]+'.'); }
-            send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, server);
+            send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, server, timezone);
           }
         }
         else{
@@ -73,20 +73,16 @@ module.exports.run = async (MAIN, raid, main_area, sub_area, embed_area, server)
   });
 }
 
-function send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, server){
+function send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, server, timezone){
 
   // VARIABLES
-  let time_now = new Date().getTime(), hatch_time = MAIN.Bot_Time(raid.start,'1');
-  let end_time = MAIN.Bot_Time(raid.end,'1');
+  let time_now = new Date().getTime();
+  let hatch_time = MAIN.Bot_Time(raid.start, '1', timezone);
+  let end_time = MAIN.Bot_Time(raid.end, '1', timezone);
   let hatch_mins = Math.floor((raid.start-(time_now/1000))/60);
   let end_mins = Math.floor((raid.end-(time_now/1000))/60);
 
-  MAIN.Static_Map_Tile(raid.latitude,raid.longitude,'raid').then(async function(img_url){
-
-    if(MAIN.debug.Raids == 'ENABLED'){ console.info('[Pokébot] ['+MAIN.Bot_Time(null,'stamp')+'] [Modules] [raids.js] Map Tile for '+type+' Retrieved.'); }
-
-    // ATTACH THE MAP TILE
-    //let attachment = new Discord.Attachment(img_url, 'Raid_Alert.png');
+  MAIN.Static_Map_Tile(raid.latitude, raid.longitude, 'raid').then(async function(img_url){
 
     // DETERMINE GYM CONTROL
     let defending_team = '';
@@ -136,7 +132,6 @@ function send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, s
           .addField('Hatches: '+hatch_time+' (*'+hatch_mins+' Mins*)', 'Level '+raid.level+' | '+defending_team+raid_sponsor, false)
           .addField('Directions:','[Google Maps](https://www.google.com/maps?q='+raid.latitude+','+raid.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+raid.latitude+','+raid.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+raid.latitude+','+raid.longitude+'&navigate=yes)',false)
           .setImage(img_url);
-          //.attachFile(attachment).setImage('attachment://Raid_Alert.png');
 
         // CHECK DISCORD CONFIG
         if(MAIN.config.RAID.Discord_Feeds == 'ENABLED'){
@@ -178,7 +173,6 @@ function send_raid(MAIN, channel, raid, type, main_area, sub_area, embed_area, s
           .addField('Raid Ends: '+end_time+' (*'+end_mins+' Mins*)', 'Level '+raid.level+' | '+defending_team+raid_sponsor, false)
           .addField('Directions:','[Google Maps](https://www.google.com/maps?q='+raid.latitude+','+raid.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+raid.latitude+','+raid.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+raid.latitude+','+raid.longitude+'&navigate=yes)',false)
           .setImage(img_url);
-          //.attachFile(attachment).setImage('attachment://Raid_Alert.png');
 
         // CHECK DISCORD CONFIG
         if(MAIN.config.RAID.Discord_Feeds == 'ENABLED'){

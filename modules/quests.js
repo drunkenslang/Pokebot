@@ -15,13 +15,13 @@ const Subscription = require('./subscriptions/quests.js');
 const insideGeofence = require('point-in-polygon');
 const insideGeojson = require('point-in-geopolygon');
 
-module.exports.run = async (MAIN, quest, main_area, sub_area, embed_area, server) => {
+module.exports.run = async (MAIN, quest, main_area, sub_area, embed_area, server, timezone) => {
 
   // DETERMINE THE QUEST REWARD
   let  quest_reward = '', simple_reward = '';
   switch(quest.rewards[0].type){
     // PLACEHOLDER
-    case 1: return console.error('NO REWARD SET. REPORT THIS TO THE DISCORD ALONG WITH THE FOLLOWING.',quest);
+    case 1: return console.error('NO REWARD SET. REPORT THIS TO THE DISCORD ALONG WITH THE FOLLOWING:',quest);
 
     // ITEM REWARDS (EXCEPT STARDUST)
     case 2:
@@ -36,13 +36,13 @@ module.exports.run = async (MAIN, quest, main_area, sub_area, embed_area, server
     case 3: quest_reward = quest.rewards[0].info.amount+' Stardust'; break;
 
     // PLACEHOLDER
-    case 4: return console.error('NO REWARD SET. REPORT THIS TO THE DISCORD ALONG WITH THE FOLLOWING.',quest);
+    case 4: return console.error('NO REWARD SET. REPORT THIS TO THE DISCORD ALONG WITH THE FOLLOWING:',quest);
 
     // PLACEHOLDER
-    case 5: return console.error('NO REWARD SET. REPORT THIS TO THE DISCORD ALONG WITH THE FOLLOWING.',quest);
+    case 5: return console.error('NO REWARD SET. REPORT THIS TO THE DISCORD ALONG WITH THE FOLLOWING:',quest);
 
     // PLACEHOLDER
-    case 6: return console.error('NO REWARD SET. REPORT THIS TO THE DISCORD ALONG WITH THE FOLLOWING.',quest);
+    case 6: return console.error('NO REWARD SET. REPORT THIS TO THE DISCORD ALONG WITH THE FOLLOWING:',quest);
 
     // ENCOUNTER REWARDS
     case 7:
@@ -78,7 +78,7 @@ module.exports.run = async (MAIN, quest, main_area, sub_area, embed_area, server
         quest_task = 'Perform '+quest.target+' '+MAIN.proto.values['throw_type_'+quest.conditions[0].info.throw_type_id]+curveball+' Throw(s) in a Row.';
       } else{
         quest_task = 'Perform '+quest.target+' '+MAIN.proto.values['throw_type_'+quest.conditions[0].info.throw_type_id]+curveball+' Throw(s).';
-      }
+      } break;
 
     // COMPLETE RAIDS
     case quest.template.indexOf('raid') >= 0:
@@ -161,7 +161,7 @@ module.exports.run = async (MAIN, quest, main_area, sub_area, embed_area, server
 
   // CHECK SUBSCRIPTION CONFIG
   if(MAIN.config.QUEST.Subscriptions == 'ENABLED'){
-    Subscription.run(MAIN, quest, quest_reward, simple_reward, main_area, sub_area, embed_area, server);
+    Subscription.run(MAIN, quest, quest_reward, simple_reward, main_area, sub_area, embed_area, server, timezone);
   } else{ console.info('[Pokébot] '+quest_reward+' Quest ignored due to Disabled Subscription setting.'); }
 
   // CHECK ALL FILTERS
@@ -185,7 +185,7 @@ module.exports.run = async (MAIN, quest, main_area, sub_area, embed_area, server
           if(filter.Rewards.indexOf(quest_reward) >= 0 || filter.Rewards.indexOf(simple_reward) >= 0){
 
             // PREPARE AND SEND TO DISCORDS
-            send_quest(MAIN, quest, channel, quest_task, quest_reward, simple_reward, main_area, sub_area, embed_area, server);
+            send_quest(MAIN, quest, channel, quest_task, quest_reward, simple_reward, main_area, sub_area, embed_area, server, timezone);
           }
           else{ // DEBUG
             if(MAIN.debug.Quests == 'ENABLED'){ console.info('[DEBUG] [quests.js] '+quest_reward+' Quest did not pass the Reward Filter. '+channel.guild.name+'|'+quest_channel[1].filter);
@@ -199,16 +199,13 @@ module.exports.run = async (MAIN, quest, main_area, sub_area, embed_area, server
   }); return;
 }
 
-async function send_quest(MAIN, quest, channel, quest_task, quest_reward, simple_reward, main_area, sub_area, embed_area, server){
+async function send_quest(MAIN, quest, channel, quest_task, quest_reward, simple_reward, main_area, sub_area, embed_area, server, timezone){
 
   // GET STATIC MAP TILE
-  MAIN.Static_Map_Tile(quest.latitude,quest.longitude,'quest').then(async function(img_url){
-
-    // ATTACH THE MAP TILE
-    // let attachment = new Discord.Attachment(imgUrl, 'maptile.jpg');
+  MAIN.Static_Map_Tile(quest.latitude, quest.longitude, 'quest').then(async function(img_url){
 
     // DECLARE VARIABLES
-    let expireTime = MAIN.Bot_Time(null,'quest');
+    let expire_time = MAIN.Bot_Time(null, 'quest', timezone);
 
     // GET REWARD ICON
     let quest_url = '';
@@ -234,9 +231,8 @@ async function send_quest(MAIN, quest, channel, quest_task, quest_reward, simple
       .addField( quest_reward+'  |  '+embed_area, quest_task, false)
       .addField('Pokéstop:', quest.pokestop_name, false)
       .addField('Directions:','[Google Maps](https://www.google.com/maps?q='+quest.latitude+','+quest.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+quest.latitude+','+quest.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+quest.latitude+','+quest.longitude+'&navigate=yes)')
-      .setFooter('Expires: '+expireTime)
+      .setFooter('Expires: '+expire_time)
       .setImage(img_url);
-      //.attachFile(attachment).setImage('attachment://maptile.jpg');
 
     // LOGGING
     if(MAIN.debug.Quests == 'ENABLED'){ console.info('[DEBUG] [quests.js] '+quest_reward+' Quest PASSED Secondary Filters and Sent to '+channel.guild.name+' ('+channel.id+').'); }

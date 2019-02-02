@@ -450,6 +450,7 @@
       "resolved": "https://registry.npmjs.org/gauge/-/gauge-2.7.4.tgz",
       "version": "2.7.4"
     },
+    "geo-tz": "^5.0.1",
     "getpass": {
       "integrity": "sha1-Xv+OPmhNVprkyysSgmBOi6YhSfo=",
       "requires": {
@@ -693,6 +694,7 @@
       "version": "0.5.1"
     },
     "moment": "^2.23.0",
+    "moment-timezone": "^0.5.23",
     "ms": {
       "integrity": "sha1-VgiurfwAvmwpAd9fmGF4jeDVl8g=",
       "resolved": "https://registry.npmjs.org/ms/-/ms-2.0.0.tgz",
