@@ -164,11 +164,8 @@ async function prepare_alert(MAIN, internal_value, sighting, time_now, main_area
   MAIN.Static_Map_Tile(sighting.latitude,sighting.longitude,'pokemon').then(async function(img_url){
 
     // DEFINE VARIABLES
-    let hide_time = await MAIN.Bot_Time(sighting.disappear_time,'1');
+    let hide_time = await MAIN.Bot_Time(sighting.disappear_time, '1', server.hour_offset);
     let hide_minutes = Math.floor((sighting.disappear_time-(time_now/1000))/60);
-
-    // ATTACH THE MAP TILE
-    let attachment = new Discord.Attachment(img_url, 'Pokemon_Alert.png');
 
     // DETERMINE MOVE NAMES AND TYPES
     let move_name_1 = MAIN.moves[sighting.move_1].name;
@@ -208,14 +205,13 @@ async function prepare_alert(MAIN, internal_value, sighting, time_now, main_area
 
     // CREATE AND SEND THE EMBED
     let pokemon_embed = new Discord.RichEmbed()
-      .setColor('00ccff')
-      .setThumbnail(pokemon_url)
-      .attachFile(attachment)
-      .setImage('attachment://Pokemon_Alert.png')
-      .setTitle(name+' '+sighting.individual_attack+'/'+sighting.individual_defense+'/'+sighting.individual_stamina+' ('+internal_value+'%)'+weather_boost)
-      .addField('Level '+sighting.pokemon_level+' | CP '+sighting.cp+gender, move_name_1+' '+move_type_1+' / '+move_name_2+' '+move_type_2, false)
-      .addField('Disappears: '+hide_time+' (*'+hide_minutes+' Mins*)', height+' | '+weight+'\n'+pokemon_type, false)
-      .addField(embed_area+' | Directions:','[Google Maps](https://www.google.com/maps?q='+sighting.latitude+','+sighting.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+sighting.latitude+','+sighting.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+sighting.latitude+','+sighting.longitude+'&navigate=yes)');
+      .setColor('00ccff').setThumbnail(pokemon_url)
+      .addField('**'+name+'** ['+internal_value+'%] '+'(LVL '+sighting.pokemon_level+') '+'|A '+sighting.individual_attack+' |D '+sighting.individual_defense+' |S '+sighting.individual_stamina+'|', '\nDisappears: **~'+hide_time+'** (*~'+hide_minutes+' Mins*) [__**'+embed_area+'**__]', true)
+	  .addField(weather_boost+' | CP '+sighting.cp+gender+' | ', height+' | '+weight, false)
+      .addField(move_name_1+' '+move_type_1+' / '+move_name_2+' '+move_type_2, 'Type: '+pokemon_type, false)
+
+      .addField(embed_area+' | Directions:','[Google Maps](https://www.google.com/maps?q='+sighting.latitude+','+sighting.longitude+') | [Apple Maps](http://maps.apple.com/maps?daddr='+sighting.latitude+','+sighting.longitude+'&z=10&t=s&dirflg=w) | [Waze](https://waze.com/ul?ll='+sighting.latitude+','+sighting.longitude+'&navigate=yes)')
+      .setImage(img_url);
 
     if(MAIN.logging == 'ENABLED'){ console.info('[Pokébot] ['+MAIN.Bot_Time(null,'stamp')+'] [Subscriptions] Sent a '+name+' DM to '+user.user_name+'.'); }
 
